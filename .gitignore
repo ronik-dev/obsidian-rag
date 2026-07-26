@@ -1,0 +1,14 @@
+#database
+data/
+
+#models 
+backend/models/
+
+#env variables
+.env
+
+#systemd service
+systemd/rag-daemon.service
+
+#python
+__pycache__/
