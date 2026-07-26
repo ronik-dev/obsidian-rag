@@ -100,6 +100,18 @@ flowchart TD
     uv run ingest.py
     ```
     *Note: The first time you run this, it will download the `all-MiniLM-L6-v2` embedding model. Subsequent runs will only process changed or new files.*
+    Optionally inspect the injection with 
+    ```bash
+    uv run sanity-check.py
+    ```
+    output values should be non 0 for a non empty vault:
+    ```text
+    $ uv run sanity-check.py
+    --- Database Counts ---
+    Documents:  <some number>
+    Chunks:     <some number>
+    PART_OF:    <some number>
+    ```
 7. **Compile link and start the Background Daemon**
     - Create and compile a `systemd/rag-daemon.service` based on `systemd/rag-daemon.service`
     - Enable and start the systemd service so the daemon runs silently in the background.
