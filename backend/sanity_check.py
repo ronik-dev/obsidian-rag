@@ -4,7 +4,7 @@ import os
 DB_PATH = os.getenv('DB_PATH', '../data/vault.db')
 
 def check():
-    db = kuzu.Database(DB_PATH)
+    db = kuzu.Database(DB_PATH, read_only=True)
     conn = kuzu.Connection(db)
     
     print("--- Database Counts ---")

@@ -16,15 +16,13 @@ def init_schema():
     
     # Node tables
     node_queries = [
-        # Folder: Represents physical directories
+        # Filesystem
         "CREATE NODE TABLE Folder (name STRING, path STRING, PRIMARY KEY (path))",
-        
-        # Document: Represents .md, .pdf, or .canvas files
         "CREATE NODE TABLE Document (title STRING, path STRING, type STRING, PRIMARY KEY (path))",
-        
+
         # Chunk: Represents a section of text. 
         # The embedding uses FLOAT[384] to match all-MiniLM-L6-v2's output dimension.
-        "CREATE NODE TABLE Chunk (id STRING, text STRING, heading STRING, embedding FLOAT[384], PRIMARY KEY (id))" 
+        "CREATE NODE TABLE Chunk (id STRING, position INT ,text STRING, heading STRING, embedding FLOAT[384], PRIMARY KEY (id))" 
     ]
 
     # Relationship (Edge) Tables
