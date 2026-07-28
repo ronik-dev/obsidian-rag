@@ -1,141 +1,48 @@
-# Local RAG
+# Local Arch Vault - C++ Backend
 
-A lightweight, fully local Retrieval-Augmented Generation (RAG) system designed for CPU-only hardware. It combines graph relationships and vector search to query Markdown notes, Obsidian Canvas files, and PDFs with minimal memory overhead.
+A high-performance, local RAG (Retrieval-Augmented Generation) system designed to ingest, index, and query your Obsidian vault using a graph-backed vector database and local LLM inference. 
 
-## Features
+The backend has been migrated from Python to **native C++** for optimized performance, lower memory overhead, and direct hardware integration.
 
-- Fully local inference with `llama.cpp`
-- Hybrid graph + vector retrieval using KùzuDB
-- Persistent background daemon for fast responses
-- Lightweight Go TUI client
-- Supports:
-  - Markdown (`.md`)
-  - Obsidian Canvas (`.canvas`)
-  - PDF (`.pdf`)
+---
 
-## Stack
+## Architecture & Technology Stack
 
-- **LLM:** Qwen (GGUF, 4-bit)
-- **Inference:** `llama.cpp`
-- **Embeddings:** `all-MiniLM-L6-v2`
-- **Database:** KùzuDB (Graph + HNSW Vector Index)
-- **Backend:** Python
-- **Frontend:** Go TUI
+| Component | Technology | Description |
+| :--- | :--- | :--- |
+| **Web Framework** | **Crow** | High-performance C++ micro-framework for handling REST API requests (`/query`, `/ingest`, `/sanitycheck`). |
+| **Graph & Vector DB** | **Kùzu (C++ API)** | Embedded graph database managing documents, folders, chunks, and semantic/wikilink relationships. |
+| **LLM Inference** | **llama.cpp** | Native C library integration running local models (e.g., Qwen2.5-Instruct GGUF) for answer generation. |
+| **Embeddings & Parsing** | *TBD / Native C++* | In-progress modules for text chunking (`std::filesystem`, `std::string_view`) and embedding generation. |
 
-## Architecture
+---
 
-```mermaid
-flowchart TD
-    subgraph Obsidian
-        X[Notes]
-        Y[PDFs]
-        Z[Canvas]
-    end
+## C++ Standards & Development Practices
 
-    Obsidian --- A[Parser & Embedder]
-    A --- B[Kuzu Graph & Vector Index]
-    B --- C[Persistent Daemon]
-    C --- D[Go TUI]
-```
+This project targets **C++20** to leverage modern features like concepts, coroutines, and formatting libraries while ensuring strict memory safety and performance.
 
-## Pipeline
+### Core Guidelines
+1. **Modern RAII & Smart Pointers:** 
+   * Raw `new` and `delete` are strictly prohibited. 
+   * Use `std::unique_ptr` for exclusive resource ownership and `std::shared_ptr` only when shared ownership is required.
+2. **Zero-Copy & Standard Libraries:**
+   * Leverage `std::string_view` for efficient string manipulation during markdown and canvas parsing.
+   * Use `std::filesystem` for robust, cross-platform file system traversal.
+3. **Asynchronicity:**
+   * Utilize Crow's routing capabilities and C++20 paradigms to keep request handling responsive.
 
-1. Parse Markdown, Canvas, and PDF files.
-2. Generate embeddings and graph relationships.
-3. Store everything in KùzuDB.
-4. Query through the Go TUI.
-5. Retrieve relevant graph/vector context.
-6. Generate a response with Qwen.
+---
 
-## Goals
+## Configuration
 
-- Local-first
-- CPU-friendly
-- Low memory usage
-- Fast startup
-- Obsidian-centric knowledge retrieval
+Copy `.env.example` to `.env` and adjust the configuration parameters to match your system specs and vault location:
 
-## Setup:
-0. **Prerequisites**
-    - have git installed `sudo pacman -S git`
-    - have uv installed  `sudo pacman -S python-uv`
-1. **clone the repository**
-    ```bash
-    git pull https://github.com/ronik-dev/obsidian-rag
-    ```
-2. **Download python dependencies**
-    ```bash
-    cd obsidian-rag/backend
-    uv sync
-    ```
-3. **Download the model**
-    ```bash
-    uv run hf download Qwen/Qwen2.5-1.5B-Instruct-GGUF qwen2.5-1.5b-instruct-q5_k_m.gguf --local-dir ./models
-    ```
-4. **Configure env variables and systemd service**
-    - compile a `.env` file based on `.env.example`
-    - compile a `systemd/rag-daemon.service` based on `systemd/rag-daemon.service.example`  
-      copy the new `systemd/rag-daemon.service` to your user `.config/systemd/`
-
-5. **Create Kùzu db schema**
-    ```bash
-    uv run schema.py
-    ```
-    expected output: 
-    ```text 
-    INFO:root:Connecting to KùzuDB at ../data/vault.db
-    INFO:root:Creating node tables...
-    INFO:root:Success: CREATE NODE TABLE Folder
-    INFO:root:Success: CREATE NODE TABLE Document
-    INFO:root:Success: CREATE NODE TABLE Chunk
-    INFO:root:Creating Relationship Tables...
-    INFO:root:Success: CREATE REL TABLE CONTAINS
-    INFO:root:Success: CREATE REL TABLE PART_OF
-    INFO:root:Success: CREATE REL TABLE LINKS_TO
-    INFO:root:Schema initialization complete!
-    ```
-6. **Ingest your Vault**
-    Run the ingestion script to parse your Markdown files, generate embeddings, and build the KùzuDB graph.
-    ```bash
-    uv run ingest.py
-    ```
-    *Note: The first time you run this, it will download the `all-MiniLM-L6-v2` embedding model. Subsequent runs will only process changed or new files.*
-    Optionally inspect the injection with 
-    ```bash
-    uv run sanity-check.py
-    ```
-    output values should be non 0 for a non empty vault:
-    ```text
-    $ uv run sanity-check.py
-    --- Database Counts ---
-    Documents:  <some number>
-    Chunks:     <some number>
-    PART_OF:    <some number>
-    ```
-7. **Compile link and start the Background Daemon**
-    - Create and compile a `systemd/rag-daemon.service` based on `systemd/rag-daemon.service`
-    - Enable and start the systemd service so the daemon runs silently in the background.
-        ```bash
-        cd ..
-        ln -s $(pwd)/systemd/rag-daemon.service ~/.config/systemd/user/rag-daemon.service
-        systemctl --user daemon-reload
-        systemctl --user enable --now rag-daemon.service
-        ```
-    - Check the logs to ensure it started correctly and the models are loaded:
-        ```bash
-        journalctl --user -fu rag-daemon.service
-        ```
-8. **Test the API (Optional)**
-    Verify the daemon is responding to queries before setting up the frontend:
-    ```bash
-    curl -X POST [http://127.0.0.1:8000/query](http://127.0.0.1:8000/query) \
-         -H "Content-Type: application/json" \
-         -d '{"query": "Summarize my recent project notes."}'
-    ```
-9. **Build and Run the Go TUI**
-    Navigate to the frontend directory, download the Bubble Tea dependencies, and run the client.
-    ```bash
-    cd ../frontend
-    go mod tidy
-    go run main.go
-    ```
+```env
+VAULT_PATH="~/path/to/your/vault"
+DB_PATH="../data/vault.db"
+MODEL_PATH="./models/qwen2.5-1.5b-instruct-q5_k_m.gguf"
+N_CTX=4096
+N_THREADS=4
+VERBOSE=false
+SIMILARITY_THRESHOLD=0.6
+TEMPERATURE=0.1

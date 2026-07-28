@@ -12,3 +12,6 @@ systemd/rag-daemon.service
 
 #python
 __pycache__/
+
+#C++ bulds
+build/
