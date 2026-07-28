@@ -29,13 +29,14 @@ FetchContent_MakeAvailable(json)
 
 # 3. Define the test executable
 add_executable(unit_tests 
-    src/canvas-parser.h
-    src/config.cpp
-    src/config.h
-    src/markdown-parser.cpp
-    src/markdown-parser.h
-    src/parser-factory.h
-    src/parser.h
+    src/config/config.cpp
+    src/config/config.h
+    src/parser/canvas-parser.h
+    src/parser/canvas-parser.cpp
+    src/parser/markdown-parser.cpp
+    src/parser/markdown-parser.h
+    src/parser/parser-factory.h
+    src/parser/parser.h
     tests/main_test.cpp
     tests/config_test.cpp
     tests/parser_test.cpp

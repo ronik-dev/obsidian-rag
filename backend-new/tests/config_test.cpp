@@ -1,7 +1,7 @@
 #include "doctest.h"
 #include <fstream>
 #include <filesystem>
-#include "../src/config.h"
+#include "../src/config/config.h"
 
 TEST_CASE("ConfigLoader successfully parses JSON configuration") {
     // 1. Setup: Create a temporary mock JSON file

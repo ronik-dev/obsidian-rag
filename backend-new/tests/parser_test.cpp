@@ -1,6 +1,6 @@
 #include "doctest.h"
-#include "../src/markdown-parser.h"
-#include "../src/canvas-parser.h" 
+#include "../src/parser/markdown-parser.h"
+#include "../src/parser/canvas-parser.h" 
 
 // =====================================================================
 // 1. GENERIC PARSER CONTRACT (Runs for ALL parser types)
@@ -94,5 +94,48 @@ TEST_SUITE("MarkdownParser Specifics") {
         REQUIRE(links.size() == 2);
         CHECK(links[0] == "Vault Architecture");
         CHECK(links[1] == "C++ Migration");
+    }
+}
+
+TEST_SUITE("CanvasParser Specifics") {
+    
+    TEST_CASE("Correctly routes text nodes through the MarkdownParser") {
+        CanvasParser parser;
+        ParserConfig config{.max_chars = 2000};
+        
+        std::string json_input = R"({
+            "nodes": [
+                {
+                    "type": "text",
+                    "text": "# Canvas Header\nSome markdown text."
+                }
+            ]
+        })";
+        
+        auto chunks = parser.parse(json_input, config);
+        
+        REQUIRE(chunks.size() == 1);
+        CHECK(chunks[0].context_header == "Canvas Text Node: Canvas Header");
+        CHECK(chunks[0].text == "# Canvas Header\nSome markdown text.\n");
+    }
+
+    TEST_CASE("Correctly extracts file and link nodes") {
+        CanvasParser parser;
+        ParserConfig config{.max_chars = 2000};
+        
+        std::string json_input = R"({
+            "nodes": [
+                {"type": "file", "file": "architecture.png"},
+                {"type": "link", "url": "https://cppreference.com"}
+            ]
+        })";
+        
+        auto chunks = parser.parse(json_input, config);
+        
+        REQUIRE(chunks.size() == 2);
+        CHECK(chunks[0].context_header == "Canvas File Reference");
+        CHECK(chunks[0].text == "Links to file: architecture.png\n");
+        CHECK(chunks[1].context_header == "Canvas URL");
+        CHECK(chunks[1].text == "External Link: https://cppreference.com\n");
     }
 }
