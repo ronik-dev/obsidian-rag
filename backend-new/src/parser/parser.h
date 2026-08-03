@@ -10,6 +10,7 @@ struct RawChunk {
 
 struct ParserConfig {
     size_t max_chars = 2000;
+    std::string document_path = "Unknown";
 };
 
 class Parser {
