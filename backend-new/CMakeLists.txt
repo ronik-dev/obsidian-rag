@@ -30,17 +30,20 @@ FetchContent_MakeAvailable(json)
 
 # 3. Define the test executable
 add_executable(unit_tests 
-    src/config/config.cpp
     src/config/config.h
+    src/config/config.cpp
+    src/parser/parser.h
+    src/parser/parser-factory.h
     src/parser/canvas-parser.h
     src/parser/canvas-parser.cpp
-    src/parser/markdown-parser.cpp
     src/parser/markdown-parser.h
-    src/parser/parser-factory.h
-    src/parser/parser.h
+    src/parser/markdown-parser.cpp
+    src/graph/graph.h
+    src/graph/graph.cpp
     tests/main_test.cpp
     tests/config_test.cpp
     tests/parser_test.cpp
+    tests/graph_test.cpp
 )
 
 # 4. Link dependencies to the test executable
